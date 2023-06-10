@@ -1,40 +1,47 @@
+from kafka import KafkaConsumer
 import mysql.connector as mc
-import requests
 
-# MySQL
-
+# Kafka Consumer settings
+bootstrap_servers = ['cnt7-naya-cdh63:9092']
+topic_name = 'Flytopic'
+ 
 host = 'localhost'
-
 mysql_port = 3306
-
 mysql_database_name = 'classicmodels' #'srcdb'
-
 mysql_table_name = 'fly' #'src_events'
-
 mysql_username = 'naya'
-
 mysql_password = 'NayaPass1!'
 
+# Connect to Kafka
+consumer = KafkaConsumer(topic_name, bootstrap_servers=bootstrap_servers)
 
 # connector to mysql
-
 mysql_conn = mc.connect(
-
 user=mysql_username,
-
 password=mysql_password,
-
 host=host,
-
 port=mysql_port,
-
 autocommit=True, # <--
-
-database=mysql_database_name)
-
-
-# Create a cursor to execute SQL queries
+database=mysql_database_name
+)
 cursor = mysql_conn.cursor()
+
+# Process Kafka messages and insert into MySQL
+for message in consumer:
+    data = message.value.decode('utf-8')  # Assuming the data is in UTF-8 encoding
+    
+
+    
+    # Split the data assuming it's comma-separated
+    values = data.split(',')
+    # Extract values as needed
+    col1 = values[0]
+    col2 = values[1]
+    col3 = values[2]
+    col4 = values[3]
+    col5 = values[4]
+    col6 = values[5]
+
 
 # Create the flights table
 cursor.execute('''CREATE TABLE IF NOT EXISTS flights (
@@ -53,7 +60,7 @@ insert_query = '''INSERT INTO flights
                 VALUES
                     (%s, %s, %s, %s, %s, %s)'''
 
-values = ('Airline X', 'FL123', 'New York', 'London', '2023-05-30 10:00:00', '2023-05-30 16:00:00')
+values = (col1, col2, col3,col4, col5, col6)
 cursor.execute(insert_query, values)
 
 # Commit the changes to the database
@@ -82,6 +89,4 @@ for row in rows:
 cursor.close()
 mysql_conn.close()
 
-
 # #######
-
