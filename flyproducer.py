@@ -1,34 +1,50 @@
+import time
+import kafka
+import json
+import requests
 from kafka import KafkaProducer
 from time import sleep
-import time
-import connection as con
-import json
+from datetime import datetime
 
 # Topics/Brokers
-topicfly = 'Flytopic'
+topicfly = 'lv1'
 brokers = ['cnt7-naya-cdh63:9092']
 
+api_key = 'cf12ce3fd6fd9263a13999c7144b13be'
 
 producer = KafkaProducer(bootstrap_servers=brokers)
 
-# The send() method creates the topic
-
-
 
 # Specify the flight number you want to retrieve information for
-flight_number = 'LY323'
-
+flight_number = 'FZ1210'
+dep_iata="TLV"
+dep_icao="EGLL"
 # API endpoint URL
-url = f'http://api.aviationstack.com/v1/flights?&access_key={con.api_key}&flight_iata={flight_number}'
 
-try:
-    response = con.requests.get(url)
-    data = response.json()
-   
-    producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
-    producer.flush()
+url = 'http://api.aviationstack.com/v1/flights?&access_key='+ api_key + '&dep_iata='+ dep_iata
+url2 = 'http://api.aviationstack.com/v1/flights?&access_key='+ api_key + '&dep_icao='+ dep_icao
 
-    print(data)
-except con.requests.exceptions.RequestException as e:
-    print('Error occurred:', e)
+while True:
+    try:
+        
+        response = requests.get(url)
+        data = response.json()
+        
+        if len(json.dumps(data)) >150:
+            producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
+            producer.flush()
+            print('done TLV',datetime.now())
+
+        time.sleep(600)
+        response = requests.get(url2)
+        data = response.json()
+        if len(json.dumps(data)) >50:
+            producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
+            producer.flush()
+            print('done LON',datetime.now())
+        time.sleep(600)
+    except requests.exceptions.RequestException as e:
+        print('Error occurred:', e)
+        break
+        
 
