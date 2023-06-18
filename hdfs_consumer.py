@@ -18,7 +18,7 @@ hdfs = pa.hdfs.connect(host='cnt7-naya-cdh63', port=8020, user='hdfs')
 consumer = KafkaConsumer(
     topic,
     client_id='consumerhdfsnew',
-    group_id='1',
+    group_id='2',
     bootstrap_servers=brokers,
     auto_offset_reset='earliest',
     enable_auto_commit=True,
@@ -33,13 +33,14 @@ for message in consumer:
     
     json_data = json.loads(message.value)
     json_string = json.dumps(json_data)
+    
     hdfs_output_path=hdfs_path+filename
     with hdfs.open(hdfs_output_path, 'wb') as file:
         file.write(json_string.encode('utf-8'))
 
     file_info = hdfs.info(hdfs_output_path)
     file_size = file_info['size']
-    if file_size>90000:
+    if file_size>100000:
        if filecounter==10:
           filecounter=0
        filecounter+=1
