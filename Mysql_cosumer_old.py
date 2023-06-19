@@ -18,7 +18,7 @@ mysql_password = 'NayaPass1!'
 consumer = KafkaConsumer(
     topic_name,
     client_id='consumer1',
-    group_id='999',
+    group_id='1001',
     bootstrap_servers=bootstrap_servers,
     auto_offset_reset='earliest',
     enable_auto_commit=True,

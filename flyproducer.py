@@ -1,50 +1,68 @@
 import time
 import kafka
-import json
-import requests
+import pandas as pd
 from kafka import KafkaProducer
 from time import sleep
+import json
+import requests
 from datetime import datetime
-
-# Topics/Brokers
-topicfly = 'lv1'
-brokers = ['cnt7-naya-cdh63:9092']
+import mysql.connector as mc
 
 api_key = 'cf12ce3fd6fd9263a13999c7144b13be'
-
+topicfly = 'lv1'
+brokers = ['cnt7-naya-cdh63:9092']
 producer = KafkaProducer(bootstrap_servers=brokers)
 
+host = 'localhost'
+mysql_port = 3306
+mysql_database_name = 'classicmodels'
+mysql_table_name = 'airport_dep_iata'
+mysql_username = 'naya'
+mysql_password = 'NayaPass1!'
 
-# Specify the flight number you want to retrieve information for
-flight_number = 'FZ1210'
-dep_iata="TLV"
-dep_icao="EGLL"
-# API endpoint URL
+mysql_conn = mc.connect(
+    user=mysql_username,
+    password=mysql_password,
+    host=host,
+    port=mysql_port,
+    autocommit=True,
+    database=mysql_database_name
+)
 
-url = 'http://api.aviationstack.com/v1/flights?&access_key='+ api_key + '&dep_iata='+ dep_iata
-url2 = 'http://api.aviationstack.com/v1/flights?&access_key='+ api_key + '&dep_icao='+ dep_icao
+df = pd.read_sql('SELECT dep_iata FROM airport_dep_iata where status=1', con=mysql_conn)
+mysql_conn.close()
 
 while True:
     try:
+        for index, row in df.iterrows():
+            values = row.values # Get the values in the row as a list
+            
+            iata_value=values = ', '.join(str(value) for value in row)
         
-        response = requests.get(url)
-        data = response.json()
-        
-        if len(json.dumps(data)) >150:
-            producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
-            producer.flush()
-            print('done TLV',datetime.now())
+            url = 'http://api.aviationstack.com/v1/flights?&access_key='+ api_key + '&dep_iata='+ str(iata_value)
 
-        time.sleep(600)
-        response = requests.get(url2)
-        data = response.json()
-        if len(json.dumps(data)) >50:
-            producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
-            producer.flush()
-            print('done LON',datetime.now())
-        time.sleep(600)
+            response = requests.get(url)
+            data = response.json()
+        
+            if len(json.dumps(data)) >150:
+                producer.send(topic=topicfly, value=json.dumps(data).encode('utf-8'))
+                producer.flush()
+                print('done ' + str(iata_value) ,datetime.now())
+            time.sleep(10)
+        
+        mysql_conn = mc.connect(
+        user=mysql_username,
+        password=mysql_password,
+        host=host,
+        port=mysql_port,
+        autocommit=True,
+        database=mysql_database_name
+        )
+
+        df = pd.read_sql('SELECT dep_iata FROM airport_dep_iata where status=1', con=mysql_conn)
+        mysql_conn.close()
+        
+        time.sleep(60)    
     except requests.exceptions.RequestException as e:
         print('Error occurred:', e)
         break
-        
-

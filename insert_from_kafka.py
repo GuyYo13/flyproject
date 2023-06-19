@@ -15,6 +15,15 @@ mysql_password = 'NayaPass1!'
 # Connect to Kafka
 consumer = KafkaConsumer(topic_name, bootstrap_servers=bootstrap_servers)
 
+flights = KafkaConsumer(
+    topic_name,
+    client_id='consumer1',
+    group_id='44',
+    bootstrap_servers=bootstrap_servers,
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+    auto_commit_interval_ms=1000)
+
 # connector to mysql
 mysql_conn = mc.connect(
 user=mysql_username,
@@ -27,7 +36,7 @@ database=mysql_database_name
 cursor = mysql_conn.cursor()
 
 # Process Kafka messages and insert into MySQL
-for message in consumer:
+for message in flights:
     data = message.value.decode('utf-8')  # Assuming the data is in UTF-8 encoding
     
 
