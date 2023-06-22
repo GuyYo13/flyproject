@@ -50,4 +50,4 @@ for message in consumer:
        print ('the new file name :' ,hdfs_output_path)
         
     
-#hdfs.close()
+hdfs.close()
